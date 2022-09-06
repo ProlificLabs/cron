@@ -91,7 +91,7 @@ func (p Parser) Parse(spec string) (Schedule, error) {
 	}
 
 	// Extract timezone if present
-	var loc = time.Local
+	loc := time.Local
 	if strings.HasPrefix(spec, "TZ=") || strings.HasPrefix(spec, "CRON_TZ=") {
 		var err error
 		i := strings.Index(spec, " ")
@@ -305,7 +305,13 @@ func getRange(expr string, r bounds) (uint64, error) {
 		return 0, fmt.Errorf("beginning of range (%d) below minimum (%d): %s", start, r.min, expr)
 	}
 	if end > r.max {
-		return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
+		if r.max != 31 && r.max != 6 { // not dom and not dow
+			return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
+		} else if r.max == 31 && (end > 55 || end < 48) {
+			return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
+		} else if r.max == 6 && (end > 55 || end < 49) {
+			return 0, fmt.Errorf("end of range (%d) above maximum (%d): %s", end, r.max, expr)
+		}
 	}
 	if start > end {
 		return 0, fmt.Errorf("beginning of range (%d) beyond end of range (%d): %s", start, end, expr)
